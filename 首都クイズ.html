@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>世界の首都クエスト</title>
+<style>
+  body {
+    background: #202040;
+    color: #fff;
+    font-family: "Yu Gothic", sans-serif;
+    text-align: center;
+    padding: 20px;
+  }
+  h1 {
+    color: #ffd700;
+    text-shadow: 2px 2px #000;
+  }
+  #game-box {
+    background: #303060;
+    border: 4px solid #fff;
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  #enemy-name {
+    font-size: 1.4rem;
+    margin: 10px 0;
+  }
+  .hp-bar {
+    height: 20px;
+    background: red;
+    border: 2px solid #fff;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  #question {
+    font-size: 1.4rem;
+    margin: 20px 0;
+  }
+  .choice {
+    display: block;
+    background: #5050a0;
+    border: 2px solid #fff;
+    padding: 10px;
+    margin: 10px auto;
+    width: 80%;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .choice:hover {
+    background: #6060c0;
+  }
+  #message {
+    margin-top: 20px;
+    min-height: 2em;
+    font-size: 1.2rem;
+  }
+  #result-img {
+    font-size: 4rem;
+    margin: 20px 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>世界の首都クエスト</h1>
+
+<div id="game-box">
+  <div id="enemy-name">敵モンスター</div>
+  <div class="hp-bar" id="enemy-hp"></div>
+
+  <div id="player-name">ゆうしゃ</div>
+  <div class="hp-bar" id="player-hp"></div>
+
+  <div id="question">問題を読み込み中...</div>
+
+  <div id="choices"></div>
+
+  <div id="message"></div>
+  <div id="result-img"></div>
+</div>
+
+<script>
+  // 敵キャラ（ステージ制）
+  const stages = [
+    { name: "スライム", hp: 100, emoji: "🟦" },
+    { name: "オオコウモリ", hp: 120, emoji: "🦇" },
+    { name: "ドラゴン", hp: 150, emoji: "🐉" }
+  ];
+
+  // 世界の首都クイズ（10問）
+  const questions = [
+    { q: "フランスの首都は？", choices: ["パリ", "ローマ", "ベルリン"], a: 0 },
+    { q: "オーストラリアの首都は？", choices: ["シドニー", "キャンベラ", "メルボルン"], a: 1 },
+    { q: "ブラジルの首都は？", choices: ["リオ", "ブラジリア", "サンパウロ"], a: 1 },
+    { q: "カナダの首都は？", choices: ["トロント", "バンクーバー", "オタワ"], a: 2 },
+    { q: "エジプトの首都は？", choices: ["カイロ", "アレクサンドリア", "ルクソール"], a: 0 },
+    { q: "インドの首都は？", choices: ["ムンバイ", "ニューデリー", "コルカタ"], a: 1 },
+    { q: "タイの首都は？", choices: ["バンコク", "チェンマイ", "プーケット"], a: 0 },
+    { q: "イタリアの首都は？", choices: ["ミラノ", "ローマ", "ナポリ"], a: 1 },
+    { q: "韓国の首都は？", choices: ["ソウル", "プサン", "テグ"], a: 0 },
+    { q: "アメリカの首都は？", choices: ["ニューヨーク", "ワシントンD.C.", "ロサンゼルス"], a: 1 }
+  ];
+
+  let index = 0;
+  let correctCount = 0;
+  let stageIndex = 0;
+
+  let enemyHP = stages[0].hp;
+  let playerHP = 100;
+
+  const enemyBar = document.getElementById("enemy-hp");
+  const playerBar = document.getElementById("player-hp");
+  const enemyNameEl = document.getElementById("enemy-name");
+  const questionEl = document.getElementById("question");
+  const choicesEl = document.getElementById("choices");
+  const messageEl = document.getElementById("message");
+  const resultImgEl = document.getElementById("result-img");
+
+  function updateHP() {
+    enemyBar.style.width = (enemyHP / stages[stageIndex].hp * 100) + "%";
+    playerBar.style.width = playerHP + "%";
+  }
+
+  function loadStage() {
+    const s = stages[stageIndex];
+    enemyNameEl.textContent = s.name + " " + s.emoji;
+    enemyHP = s.hp;
+    updateHP();
+  }
+
+  function loadQuestion() {
+    if (index >= questions.length) {
+      showResult();
+      return;
+    }
+    const q = questions[index];
+    questionEl.textContent = "Q" + (index + 1) + "：" + q.q;
+    choicesEl.innerHTML = "";
+    resultImgEl.textContent = "";
+
+    q.choices.forEach((c, i) => {
+      const btn = document.createElement("div");
+      btn.textContent = c;
+      btn.className = "choice";
+      btn.onclick = () => checkAnswer(i);
+      choicesEl.appendChild(btn);
+    });
+  }
+
+  function checkAnswer(choice) {
+    const q = questions[index];
+    if (choice === q.a) {
+      messageEl.textContent = "せいかい！こうげき！🔥";
+      enemyHP -= 40;
+      correctCount++;
+    } else {
+      messageEl.textContent = "ざんねん…モンスターのこうげき！💥";
+      playerHP -= 20;
+    }
+    updateHP();
+
+    // 敵を倒したら次のステージへ
+    if (enemyHP <= 0) {
+      stageIndex++;
+      if (stageIndex < stages.length) {
+        messageEl.textContent = "ステージクリア！つぎの敵があらわれた！";
+        setTimeout(() => {
+          loadStage();
+          index++;
+          loadQuestion();
+        }, 1500);
+        return;
+      }
+    }
+
+    index++;
+    setTimeout(loadQuestion, 1200);
+  }
+
+  function showResult() {
+    choicesEl.innerHTML = "";
+    questionEl.textContent = "けっか発表！";
+
+    if (correctCount >= 8) {
+      messageEl.textContent = "すごい！君は世界の首都マスターだ！";
+      resultImgEl.textContent = "🦸🌍✨";
+    } else if (correctCount >= 4) {
+      messageEl.textContent = "おしかったね！あと少しでマスター！";
+      resultImgEl.textContent = "🙂👍";
+    } else {
+      messageEl.textContent = "また挑戦しよう！";
+      resultImgEl.textContent = "😢";
+    }
+  }
+
+  loadStage();
+  loadQuestion();
+</script>
+
+</body>
+</html>
